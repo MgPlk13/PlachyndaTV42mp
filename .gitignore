@@ -1,0 +1,11 @@
+employees_db-full-1.0.6.db
+.venv/
+__pycache__/
+*.pyc
+*.pkl
+*.db
+datasets/
+logs/
+.idea/
+config_db.py
+*.csv

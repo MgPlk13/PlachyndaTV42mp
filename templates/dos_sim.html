@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>DOS Simulation &amp; Real-time Graph</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 18px;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .section {
+            max-width: 1000px;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h3 {
+            margin-top: 0;
+        }
+
+        form input,
+        form button {
+            margin: 5px 0;
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        form input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        form button {
+            background: #2d89ef;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        form button:hover {
+            background: #1b5fab;
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        label {
+            margin-right: 8px;
+        }
+
+        #trainOutput {
+            max-height: 250px;
+            overflow: auto;
+            padding: 10px;
+            background: #f4f4f4;
+            border: 1px solid #cccccc;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .msg {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .row .section {
+            flex: 1 1 450px;
+            max-width: none;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+<h2>DOS Simulation — Real-time chart</h2>
+
+<div class="row">
+    <div class="section">
+        <h3>Підключення баз даних</h3>
+
+        <form id="db-connect-form">
+            <input
+                    type="text"
+                    name="host"
+                    placeholder="Host"
+                    value="localhost"
+                    required
+            >
+            <input
+                    type="number"
+                    name="port"
+                    placeholder="Port"
+                    value="5432"
+                    required
+            >
+            <input
+                    type="text"
+                    name="user"
+                    placeholder="User"
+                    required
+            >
+            <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+            >
+            <input
+                    type="text"
+                    name="dbname"
+                    placeholder="Database name"
+                    required
+            >
+            <button type="submit">Підключиться</button>
+        </form>
+
+        <div id="db-connect-msg" class="msg"></div>
+    </div>
+
+    <div class="section">
+        <h3>Генерація датасета</h3>
+
+        <form id="dataset-form">
+            <input
+                    type="text"
+                    name="filename"
+                    placeholder="Назва файлу (без .csv)"
+                    required
+            >
+            <input
+                    type="number"
+                    name="safe_count"
+                    value="100"
+                    min="10"
+                    placeholder="Кількість безпечних запитів"
+                    required
+            >
+            <input
+                    type="number"
+                    name="mal_count"
+                    value="100"
+                    min="10"
+                    placeholder="Кількість небезпезних запитів"
+                    required
+            >
+            <button type="submit">Побудувати датасет</button>
+        </form>
+
+        <div id="dataset-msg" class="msg"></div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="controls">
+        <label>
+            Target:
+            <input id="target" value="{{ request.host_url.rstrip('/') }}">
+        </label>
+
+        <label>
+            Count:
+            <input id="count" type="number" value="300" min="1">
+        </label>
+
+        <label>
+            Rate:
+            <input id="rate" type="number" value="120">
+        </label>
+
+        <label>
+            Concurrency:
+            <input id="concurrency" type="number" value="6">
+        </label>
+
+        <label>
+            Malicious %:
+            <input id="mix" type="number" value="30" min="0" max="100">%
+        </label>
+
+        <button id="startBtn">Start</button>
+        <button id="stopBtn" type="button">Stop</button>
+
+        <button
+                id="trainBtn"
+                type="button"
+                style="background: #2d89ef; color: white;"
+        >
+            Перенавчання моделі
+        </button>
+
+        <span id="status" style="margin-left: 12px; color: green;"></span>
+    </div>
+
+    <canvas id="chart" width="1000" height="300"></canvas>
+
+    <h3>Результат навчання моделі:</h3>
+    <pre id="trainOutput"></pre>
+</div>
+
+<script>
+    document
+        .getElementById("db-connect-form")
+        .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const msgEl = document.getElementById("db-connect-msg");
+            msgEl.textContent = "Підключеняя триває...";
+            try {
+                const r = await fetch("/connect_db", { method: "POST", body: formData });
+                const j = await r.json();
+                msgEl.textContent = j.message;
+                msgEl.style.color = j.success ? "green" : "red";
+            } catch (err) {
+                msgEl.textContent = "Помилка підключення";
+                msgEl.style.color = "red";
+            }
+        });
+
+    document
+        .getElementById("dataset-form")
+        .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const msgEl = document.getElementById("dataset-msg");
+            msgEl.textContent = "Генерація триває...";
+            try {
+                const r = await fetch("/build_dataset", { method: "POST", body: formData });
+                const j = await r.json();
+                msgEl.textContent = j.message;
+                msgEl.style.color = j.success ? "green" : "red";
+            } catch (err) {
+                msgEl.textContent = "Помилка генерації датасету";
+                msgEl.style.color = "red";
+            }
+        });
+
+    const ctx = document.getElementById("chart").getContext("2d");
+    const maxPoints = 60;
+
+    let labels = [];
+    let allowedData = [];
+    let blockedData = [];
+
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: "Allowed", data: allowedData, borderColor: "green", tension: 0.2 },
+                { label: "Blocked", data: blockedData, borderColor: "red", tension: 0.2 },
+            ],
+        },
+        options: {
+            animation: false,
+            responsive: true,
+            scales: {
+                x: { display: true },
+                y: { beginAtZero: true },
+            },
+        },
+    });
+
+    const evtSource = new EventSource("/dos_stream");
+    evtSource.onmessage = function (e) {
+        try {
+            const d = JSON.parse(e.data);
+            labels.push(d.timestamp);
+            allowedData.push(d.allowed);
+            blockedData.push(d.blocked);
+
+            if (labels.length > maxPoints) {
+                labels.shift();
+                allowedData.shift();
+                blockedData.shift();
+            }
+
+            chart.update("none");
+        } catch (err) {
+            console.error("SSE parse error", err);
+        }
+    };
+
+    const statusEl = document.getElementById("status");
+    document.getElementById("startBtn").onclick = async (e) => {
+        e.preventDefault();
+        const payload = {
+            target: document.getElementById("target").value,
+            count: parseInt(document.getElementById("count").value, 10),
+            rate: parseInt(document.getElementById("rate").value, 10),
+            concurrency: parseInt(document.getElementById("concurrency").value, 10),
+            mix: parseFloat(document.getElementById("mix").value) / 100,
+            force: true,
+        };
+
+        statusEl.textContent = "starting...";
+        try {
+            const r = await fetch("/simulate/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const j = await r.json();
+            statusEl.textContent = r.ok
+                ? "running"
+                : "error: " + (j.error || JSON.stringify(j));
+        } catch (err) {
+            statusEl.textContent = "error";
+        }
+    };
+
+    document.getElementById("stopBtn").onclick = async () => {
+        statusEl.textContent = "stopping...";
+        try {
+            const r = await fetch("/simulate/stop", { method: "POST" });
+            const j = await r.json();
+            statusEl.textContent = j.result || "stopped";
+        } catch (err) {
+            statusEl.textContent = "error";
+        }
+    };
+
+    document.getElementById("trainBtn").onclick = async () => {
+        const out = document.getElementById("trainOutput");
+        out.textContent = "Оновлення моделі...";
+        try {
+            const r = await fetch("/train_model", { method: "POST" });
+            const j = await r.json();
+
+            if (j.success) {
+                out.textContent = ` ${j.message}\nROC AUC: ${j.roc_auc.toFixed(4)}\n\n${j.report}`;
+            } else {
+                out.textContent = ` ${j.message}`;
+            }
+        } catch (err) {
+            out.textContent = "Помилка обновлення моделі";
+        }
+    };
+</script>
+</body>
+</html>

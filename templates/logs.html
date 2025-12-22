@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Журнал SQL-запитів</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: auto;
+            background: #f8f8f8;
+        }
+
+        h1 { font-size: 24px; }
+
+        .actions {
+            margin-bottom: 20px;
+        }
+
+        a.button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        a.button:hover {
+            background: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .danger { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>📄 Журнал заблокованих SQL-запитів</h1>
+
+<div class="actions">
+    <a class="button" href="/">← Повернутись</a>
+    <a class="button" href="/logs/download"> Завантажити</a>
+    <a class="button" href="/logs/clear" onclick="return confirm('Очистити журнал?');">🗑️ Очистити</a>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Дата</th>
+        <th>Причина</th>
+        <th>Тип атаки</th>
+        <th>SQL-запит</th>
+        <th>Оцінка</th>
+        <th>IP</th>
+        <th>Статус</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+    <tr>
+        <td>{{ log.timestamp }}</td>
+        <td>{{ log.reason }}</td>
+        <td>{{ log.attack_type.code if log.attack_type else '-' }}</td>
+        <td><code>{{ log.query }}</code></td>
+        <td>{{ "%.2f"|format(log.score) if log.score is not none else "-" }}</td>
+        <td>{{ log.source_ip }}</td>
+        <td>{{ log.status }}</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7"> Журнал порожній</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

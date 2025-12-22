@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title> Побудова датасету</title>
+
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 30px;
+            font-family: "Segoe UI", sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .builder-box {
+            width: 400px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h3 {
+            text-align: center;
+            margin: 0 0 15px;
+        }
+
+        h1 {
+            font-size: 22px;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            width: 100%;
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: #2d89ef;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1c5fb8;
+        }
+
+        hr {
+            margin: 25px 0;
+            border: none;
+            border-top: 1px solid #dddddd;
+        }
+
+        .success {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            background: #e7f9ed;
+            color: #2f7a3e;
+            border: 1px solid #c4eccf;
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0;
+        }
+
+        .flashes li {
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #e7f9ed;
+            color: #2f7a3e;
+            border: 1px solid #c4eccf;
+        }
+
+        .error-message {
+            background: #fdecea;
+            color: #b3261e;
+            border: 1px solid #f5c2c0;
+        }
+    </style>
+</head>
+
+<body>
+<div class="builder-box">
+    <h3>Підключення до бази даних</h3>
+
+    <form method="post" action="/dataset_builder" class="db-form">
+        <label>Host:</label>
+        <input type="text" name="host" value="localhost" required>
+
+        <label>Port:</label>
+        <input type="number" name="port" value="5432" required>
+
+        <label>User:</label>
+        <input type="text" name="user" required>
+
+        <label>Password:</label>
+        <input type="password" name="password" required>
+
+        <label>Database name:</label>
+        <input type="text" name="dbname" required>
+
+        <button type="submit">🔌 Підключитися</button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{% if category == 'success' %}success-message{% else %}error-message{% endif %}">
+            {{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <hr>
+
+    <h1> Генерація датасету</h1>
+
+    <form method="post" action="/build_dataset">
+        <label for="filename">Назва файлу (без .csv)</label>
+        <input type="text" id="filename" name="filename" placeholder="наприклад: my_dataset" required>
+
+        <label for="safe_count">Кількість безпечних запитів</label>
+        <input type="number" id="safe_count" name="safe_count" value="100" min="10" required>
+
+        <label for="mal_count">Кількість шкідливих запитів</label>
+        <input type="number" id="mal_count" name="mal_count" value="100" min="10" required>
+
+        <button type="submit"> Побудувати датасет</button>
+    </form>
+
+    {% if success %}
+    <div class="success">
+        Датасет збережено як:<br>
+        <strong>{{ filepath }}</strong>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

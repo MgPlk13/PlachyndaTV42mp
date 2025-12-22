@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title> Підключення до Бази Даних</title>
+
+    <style>
+        body {
+            height: 100vh;
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .form-box {
+            width: 400px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0 0 15px;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            width: 100%;
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 10px;
+            background: #2d89ef;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1c5fb8;
+        }
+
+        .flash {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .flash.success {
+            background: #e7f9ed;
+            color: #2f7a3e;
+            border: 1px solid #c4eccf;
+        }
+
+        .flash.error {
+            background: #fde8e8;
+            color: #a94442;
+            border: 1px solid #f5c2c0;
+        }
+    </style>
+</head>
+
+<body>
+<div class="form-box">
+    <h1> Підключення до БД</h1>
+
+    <form method="post" action="/connect_db">
+        <label for="host">Хост</label>
+        <input
+                type="text"
+                id="host"
+                name="host"
+                placeholder="localhost або IP"
+                required
+        >
+
+        <label for="port">Порт</label>
+        <input
+                type="number"
+                id="port"
+                name="port"
+                value="5432"
+                required
+        >
+
+        <label for="user">Користувач</label>
+        <input
+                type="text"
+                id="user"
+                name="user"
+                required
+        >
+
+        <label for="password">Пароль</label>
+        <input
+                type="password"
+                id="password"
+                name="password"
+                required
+        >
+
+        <label for="dbname">Назва бази</label>
+        <input
+                type="text"
+                id="dbname"
+                name="dbname"
+                required
+        >
+
+        <button type="submit">✅ Підключитись</button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
+</body>
+</html>
